@@ -1,0 +1,224 @@
+
+import React, { useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Camera,
+  Upload,
+  Sparkles,
+  ChevronRight,
+  Check,
+  X,
+  Flame,
+  Beef,
+  Wheat,
+  Droplets,
+  Leaf,
+  Search,
+  History,
+  Home,
+  ScanLine,
+  Plus,
+  Info,
+  ShieldCheck,
+  RotateCcw,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+
+const sampleResult = {
+  title: "Chicken rice with vegetables",
+  confidence: 92,
+  calories: 542,
+  serving: "1 plate · approximately 420 g",
+  macros: [
+    { name: "Protein", value: 36, unit: "g", target: 90, color: "bg-emerald-500", icon: Beef },
+    { name: "Carbs", value: 67, unit: "g", target: 220, color: "bg-amber-400", icon: Wheat },
+    { name: "Fat", value: 16, unit: "g", target: 65, color: "bg-violet-500", icon: Droplets },
+    { name: "Fibre", value: 7, unit: "g", target: 30, color: "bg-cyan-500", icon: Leaf },
+  ],
+  foods: [
+    { name: "Roasted chicken", amount: "140 g", kcal: 258 },
+    { name: "Steamed rice", amount: "180 g", kcal: 234 },
+    { name: "Mixed vegetables", amount: "100 g", kcal: 50 },
+  ],
+  micros: [
+    { name: "Vitamin A", value: 58, amount: "520 mcg" },
+    { name: "Vitamin C", value: 71, amount: "64 mg" },
+    { name: "Vitamin D", value: 18, amount: "3.6 mcg" },
+    { name: "Vitamin B12", value: 76, amount: "1.8 mcg" },
+    { name: "Iron", value: 34, amount: "6.1 mg" },
+    { name: "Calcium", value: 19, amount: "190 mg" },
+    { name: "Magnesium", value: 37, amount: "155 mg" },
+    { name: "Potassium", value: 31, amount: "1,450 mg" },
+  ],
+};
+
+const historyItems = [
+  { name: "Salmon grain bowl", time: "Today, 12:35 PM", kcal: 618, color: "from-orange-200 to-rose-100" },
+  { name: "Oatmeal with berries", time: "Today, 8:10 AM", kcal: 386, color: "from-violet-200 to-blue-100" },
+  { name: "Tofu noodle soup", time: "Yesterday, 7:18 PM", kcal: 471, color: "from-emerald-200 to-lime-100" },
+];
+
+function Ring({ value, size = 60, stroke = 6, color = "#10b981", children }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#eef2f0" strokeWidth={stroke} />
+        <motion.circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
+          initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: c * (1 - Math.min(value,100)/100) }}
+          strokeDasharray={c} transition={{ duration: .8 }} />
+      </svg>
+      <div className="absolute inset-0 grid place-items-center">{children}</div>
+    </div>
+  );
+}
+
+function App() {
+  const [tab, setTab] = useState("home");
+  const [image, setImage] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [result, setResult] = useState(null);
+  const [query, setQuery] = useState("");
+  const [showInfo, setShowInfo] = useState(false);
+  const inputRef = useRef(null);
+
+  const daily = { calories: 1548, calorieGoal: 2200, protein: 86, carbs: 142, fat: 51 };
+
+  const filteredHistory = useMemo(() => historyItems.filter(x => x.name.toLowerCase().includes(query.toLowerCase())), [query]);
+
+  function chooseFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    setImage(URL.createObjectURL(file));
+    setResult(null);
+    setTab("scan");
+  }
+
+  function scanMeal() {
+    if (!image) return;
+    setScanning(true);
+    setResult(null);
+    window.setTimeout(() => {
+      setScanning(false);
+      setResult(sampleResult);
+    }, 2300);
+  }
+
+  function resetScan() {
+    if (image) URL.revokeObjectURL(image);
+    setImage(null);
+    setResult(null);
+    setScanning(false);
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f4f7f3] text-slate-900 font-sans">
+      <header className="sticky top-0 z-30 border-b border-white/70 bg-[#f4f7f3]/85 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 md:px-8">
+          <button onClick={() => setTab("home")} className="flex items-center gap-2">
+            <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-200"><Leaf size={21}/></span>
+            <span className="text-xl font-black tracking-tight">NutriLens</span>
+          </button>
+          <nav className="hidden items-center gap-1 rounded-2xl bg-white p-1 shadow-sm md:flex">
+            {[["home","Overview",Home],["scan","AI Scan",ScanLine],["history","History",History]].map(([id,label,Icon]) => (
+              <button key={id} onClick={() => setTab(id)} className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${tab===id ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}><Icon size={16}/>{label}</button>
+            ))}
+          </nav>
+          <button onClick={() => setShowInfo(true)} className="grid h-10 w-10 place-items-center rounded-full bg-white text-slate-600 shadow-sm"><Info size={18}/></button>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 pb-28 pt-6 md:px-8 md:pt-10">
+        <AnimatePresence mode="wait">
+          {tab === "home" && (
+            <motion.div key="home" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0}} className="space-y-7">
+              <section className="grid gap-5 lg:grid-cols-[1.35fr_.65fr]">
+                <div className="relative overflow-hidden rounded-[2rem] bg-slate-950 p-7 text-white shadow-xl md:p-10">
+                  <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-500/25 blur-3xl" />
+                  <div className="relative max-w-xl">
+                    <Badge className="mb-5 rounded-full border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-emerald-300 hover:bg-emerald-400/10"><Sparkles size={13} className="mr-1"/>AI meal insights</Badge>
+                    <h1 className="text-4xl font-black leading-[1.08] tracking-tight md:text-6xl">Know what's on your plate.</h1>
+                    <p className="mt-4 max-w-lg text-base leading-7 text-slate-300 md:text-lg">Upload a meal photo to estimate calories, macros, vitamins and minerals in seconds.</p>
+                    <Button onClick={() => setTab("scan")} className="mt-7 h-12 rounded-2xl bg-emerald-500 px-6 font-bold text-white hover:bg-emerald-400">Scan a meal <ChevronRight size={18}/></Button>
+                  </div>
+                </div>
+                <Card className="rounded-[2rem] border-0 bg-white shadow-sm"><CardContent className="p-7">
+                  <div className="flex items-start justify-between"><div><p className="text-sm font-semibold text-slate-400">TODAY</p><h2 className="mt-1 text-2xl font-black">Daily energy</h2></div><Flame className="text-orange-500"/></div>
+                  <div className="mt-7 flex items-center gap-5"><Ring value={(daily.calories/daily.calorieGoal)*100} size={112} stroke={10} color="#10b981"><span className="text-xl font-black">70%</span></Ring><div><div className="text-3xl font-black">{daily.calories.toLocaleString()}</div><div className="text-sm text-slate-400">of {daily.calorieGoal.toLocaleString()} kcal</div><div className="mt-2 text-sm font-bold text-emerald-600">652 kcal remaining</div></div></div>
+                  <div className="mt-7 grid grid-cols-3 gap-3">{[["Protein","86 g"],["Carbs","142 g"],["Fat","51 g"]].map(x=><div key={x[0]} className="rounded-2xl bg-slate-50 p-3"><div className="text-xs text-slate-400">{x[0]}</div><div className="mt-1 font-extrabold">{x[1]}</div></div>)}</div>
+                </CardContent></Card>
+              </section>
+
+              <section>
+                <div className="mb-4 flex items-end justify-between"><div><p className="text-sm font-bold text-emerald-600">NUTRIENT CHECK</p><h2 className="text-2xl font-black">Your micronutrients</h2></div><button className="text-sm font-bold text-slate-500">View all</button></div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{sampleResult.micros.slice(0,4).map((m,i)=><Card key={m.name} className="rounded-3xl border-0 bg-white shadow-sm"><CardContent className="flex items-center gap-4 p-5"><Ring value={m.value} color={["#10b981","#f59e0b","#8b5cf6","#06b6d4"][i]}><span className="text-xs font-black">{m.value}%</span></Ring><div><div className="font-extrabold">{m.name}</div><div className="text-sm text-slate-400">{m.amount}</div></div></CardContent></Card>)}</div>
+              </section>
+            </motion.div>
+          )}
+
+          {tab === "scan" && (
+            <motion.div key="scan" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0}}>
+              <div className="mx-auto max-w-4xl">
+                <div className="mb-7 text-center"><Badge className="rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-100">AI SCAN</Badge><h1 className="mt-3 text-3xl font-black md:text-5xl">Scan your meal</h1><p className="mt-2 text-slate-500">Use a clear, well-lit photo taken from above.</p></div>
+                {!image ? (
+                  <div onClick={() => inputRef.current?.click()} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();chooseFile(e.dataTransfer.files[0])}} className="group cursor-pointer rounded-[2rem] border-2 border-dashed border-emerald-200 bg-white p-8 text-center shadow-sm transition hover:border-emerald-400 hover:shadow-lg md:p-16">
+                    <div className="mx-auto grid h-24 w-24 place-items-center rounded-[2rem] bg-emerald-50 text-emerald-600 transition group-hover:scale-105"><Camera size={40}/></div>
+                    <h2 className="mt-6 text-2xl font-black">Drop a meal photo here</h2><p className="mt-2 text-slate-400">JPG, PNG or WEBP · up to 10 MB</p>
+                    <Button className="mt-6 h-12 rounded-2xl bg-slate-900 px-6"><Upload size={17} className="mr-2"/>Choose photo</Button>
+                    <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e=>chooseFile(e.target.files?.[0])}/>
+                  </div>
+                ) : (
+                  <div className="grid gap-5 lg:grid-cols-[.85fr_1.15fr]">
+                    <div>
+                      <div className="relative overflow-hidden rounded-[2rem] bg-slate-900 shadow-xl aspect-[4/5]"><img src={image} alt="Uploaded meal" className="h-full w-full object-cover"/>
+                        {scanning && <motion.div initial={{top:"0%"}} animate={{top:"100%"}} transition={{duration:1.3,repeat:Infinity,ease:"linear"}} className="absolute left-0 right-0 h-1 bg-emerald-300 shadow-[0_0_24px_8px_rgba(110,231,183,.65)]"/>}
+                        <button onClick={resetScan} className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-black/50 text-white backdrop-blur"><X size={18}/></button>
+                      </div>
+                      {!result && <Button disabled={scanning} onClick={scanMeal} className="mt-4 h-14 w-full rounded-2xl bg-emerald-500 text-base font-black hover:bg-emerald-600">{scanning ? <><Sparkles className="mr-2 animate-pulse"/>Analyzing nutrients…</> : <><ScanLine className="mr-2"/>Analyze meal</>}</Button>}
+                    </div>
+                    <div>
+                      {!result ? <div className="grid h-full min-h-[420px] place-items-center rounded-[2rem] bg-white p-8 text-center shadow-sm"><div><Sparkles className="mx-auto text-emerald-400" size={38}/><h3 className="mt-4 text-xl font-black">Ready for analysis</h3><p className="mt-2 max-w-sm text-slate-400">We’ll identify likely foods and estimate calories, macros and key micronutrients.</p></div></div> : <ResultPanel result={result}/>} 
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {tab === "history" && (
+            <motion.div key="history" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} className="mx-auto max-w-4xl">
+              <h1 className="text-4xl font-black">Meal history</h1><p className="mt-2 text-slate-500">Review and compare your previous scans.</p>
+              <div className="relative mt-6"><Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18}/><Input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search meals" className="h-13 rounded-2xl border-0 bg-white pl-11 shadow-sm"/></div>
+              <div className="mt-5 space-y-3">{filteredHistory.map(item=><Card key={item.name} className="rounded-3xl border-0 bg-white shadow-sm"><CardContent className="flex items-center gap-4 p-4"><div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${item.color}`}/><div className="min-w-0 flex-1"><div className="truncate font-extrabold">{item.name}</div><div className="text-sm text-slate-400">{item.time}</div></div><div className="text-right"><div className="font-black">{item.kcal}</div><div className="text-xs text-slate-400">kcal</div></div><ChevronRight className="text-slate-300" size={18}/></CardContent></Card>)}</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+
+      <div className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-[1.5rem] border border-white bg-white/90 p-2 shadow-2xl backdrop-blur md:hidden">
+        {[["home",Home],["scan",Plus],["history",History]].map(([id,Icon])=><button key={id} onClick={()=>setTab(id)} className={`grid h-12 w-16 place-items-center rounded-2xl ${tab===id ? "bg-slate-900 text-white" : "text-slate-400"}`}><Icon size={20}/></button>)}
+      </div>
+
+      <AnimatePresence>{showInfo && <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm" onClick={()=>setShowInfo(false)}><motion.div initial={{scale:.95,y:10}} animate={{scale:1,y:0}} onClick={e=>e.stopPropagation()} className="max-w-md rounded-[2rem] bg-white p-7 shadow-2xl"><div className="flex items-center justify-between"><ShieldCheck className="text-emerald-500" size={30}/><button onClick={()=>setShowInfo(false)}><X/></button></div><h2 className="mt-4 text-2xl font-black">About estimates</h2><p className="mt-3 leading-7 text-slate-500">Photo-based nutrition results are estimates. Portion size, ingredients and cooking methods can change the actual values. Confirm foods and serving sizes before relying on the result. This prototype does not provide medical advice.</p><Button onClick={()=>setShowInfo(false)} className="mt-6 w-full rounded-2xl bg-slate-900">Got it</Button></motion.div></motion.div>}</AnimatePresence>
+    </div>
+  );
+}
+
+function ResultPanel({ result }) {
+  return <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} className="space-y-4">
+    <Card className="rounded-[2rem] border-0 bg-white shadow-sm"><CardContent className="p-6">
+      <div className="flex items-start justify-between gap-4"><div><Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100"><Check size={12} className="mr-1"/>{result.confidence}% match</Badge><h2 className="mt-3 text-2xl font-black leading-tight">{result.title}</h2><p className="mt-1 text-sm text-slate-400">{result.serving}</p></div><div className="rounded-2xl bg-orange-50 p-3 text-center"><Flame className="mx-auto text-orange-500" size={19}/><div className="mt-1 text-xl font-black">{result.calories}</div><div className="text-[10px] font-bold text-slate-400">KCAL</div></div></div>
+      <div className="mt-6 grid grid-cols-2 gap-3">{result.macros.map(m=><div key={m.name} className="rounded-2xl bg-slate-50 p-3"><div className="flex items-center justify-between text-xs"><span className="font-bold text-slate-500">{m.name}</span><span className="font-black">{m.value}{m.unit}</span></div><Progress value={m.value/m.target*100} className="mt-2 h-1.5"/></div>)}</div>
+    </CardContent></Card>
+    <Card className="rounded-[2rem] border-0 bg-white shadow-sm"><CardContent className="p-6"><h3 className="font-black">Foods detected</h3><div className="mt-3 divide-y">{result.foods.map(f=><div key={f.name} className="flex items-center py-3 text-sm"><span className="flex-1 font-semibold">{f.name}</span><span className="mr-4 text-slate-400">{f.amount}</span><span className="font-bold">{f.kcal} kcal</span></div>)}</div></CardContent></Card>
+    <Card className="rounded-[2rem] border-0 bg-white shadow-sm"><CardContent className="p-6"><div className="flex justify-between"><h3 className="font-black">Micronutrients</h3><span className="text-xs font-bold text-slate-400">% DAILY VALUE</span></div><div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4">{result.micros.map(m=><div key={m.name}><div className="flex justify-between text-xs"><span className="font-semibold">{m.name}</span><span className="font-black">{m.value}%</span></div><Progress value={m.value} className="mt-1.5 h-1.5"/></div>)}</div></CardContent></Card>
+    <Button variant="outline" className="h-12 w-full rounded-2xl border-slate-200 bg-white"><RotateCcw size={16} className="mr-2"/>Edit foods or portions</Button>
+  </motion.div>
+}
+
+export default App;
